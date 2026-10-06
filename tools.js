@@ -1,6 +1,5 @@
 import { getDB } from "./db.js";
 
-// 1. Get account balance
 export async function getBalance(accountId) {
   const db = await getDB();
 
@@ -9,7 +8,9 @@ export async function getBalance(accountId) {
   });
 
   if (!account) {
-    return { error: "Account not found" };
+    return {
+      error: "Account not found"
+    };
   }
 
   return {
@@ -18,8 +19,6 @@ export async function getBalance(accountId) {
   };
 }
 
-
-// 2. Get latest transactions
 export async function getTransactions(
   accountId,
   category,
@@ -33,7 +32,7 @@ export async function getTransactions(
   };
 
   if (category) {
-    query.category = category;
+    query.category = category.toLowerCase().trim();
   }
 
   if (fromDate || toDate) {
@@ -56,8 +55,6 @@ export async function getTransactions(
     .toArray();
 }
 
-
-// 3. Get spending summary
 export async function getSpendingSummary(accountId, month) {
   const db = await getDB();
 
@@ -66,33 +63,34 @@ export async function getSpendingSummary(accountId, month) {
   const endDate = new Date(startDate);
   endDate.setMonth(endDate.getMonth() + 1);
 
-  const result = await db.collection("transactions").aggregate([
-    {
-      $match: {
-        accountId,
-        type: "debit",
-        date: {
-          $gte: startDate,
-          $lt: endDate
+  const result = await db
+    .collection("transactions")
+    .aggregate([
+      {
+        $match: {
+          accountId,
+          type: "debit",
+          date: {
+            $gte: startDate,
+            $lt: endDate
+          }
+        }
+      },
+      {
+        $group: {
+          _id: "$category",
+          total: {
+            $sum: "$amount"
+          }
+        }
+      },
+      {
+        $sort: {
+          total: -1
         }
       }
-    },
-
-    {
-      $group: {
-        _id: "$category",
-        total: {
-          $sum: "$amount"
-        }
-      }
-    },
-
-    {
-      $sort: {
-        total: -1
-      }
-    }
-  ]).toArray();
+    ])
+    .toArray();
 
   return result.map(item => ({
     category: item._id,
@@ -100,10 +98,10 @@ export async function getSpendingSummary(accountId, month) {
   }));
 }
 
-
-// 4. Set budget
 export async function setBudget(userId, category, limit) {
   const db = await getDB();
+
+  category = category.toLowerCase().trim();
 
   const month = new Date()
     .toISOString()
@@ -136,10 +134,10 @@ export async function setBudget(userId, category, limit) {
   };
 }
 
-
-// 5. Check budget status
 export async function checkBudgetStatus(userId, category) {
   const db = await getDB();
+
+  category = category.toLowerCase().trim();
 
   const month = new Date()
     .toISOString()
@@ -162,28 +160,30 @@ export async function checkBudgetStatus(userId, category) {
   const endDate = new Date(startDate);
   endDate.setMonth(endDate.getMonth() + 1);
 
-  const result = await db.collection("transactions").aggregate([
-    {
-      $match: {
-        accountId: "acc_001",
-        category,
-        type: "debit",
-        date: {
-          $gte: startDate,
-          $lt: endDate
+  const result = await db
+    .collection("transactions")
+    .aggregate([
+      {
+        $match: {
+          accountId: "acc_001",
+          category,
+          type: "debit",
+          date: {
+            $gte: startDate,
+            $lt: endDate
+          }
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          total: {
+            $sum: "$amount"
+          }
         }
       }
-    },
-
-    {
-      $group: {
-        _id: null,
-        total: {
-          $sum: "$amount"
-        }
-      }
-    }
-  ]).toArray();
+    ])
+    .toArray();
 
   const spent = result[0]?.total || 0;
 

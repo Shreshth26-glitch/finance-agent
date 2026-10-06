@@ -2,29 +2,22 @@ import { connectDB } from "./db.js";
 
 const db = await connectDB();
 
-const accountsCollection = db.collection("accounts");
-const transactionsCollection = db.collection("transactions");
-const budgetsCollection = db.collection("budgets");
+const accounts = db.collection("accounts");
+const transactions = db.collection("transactions");
+const budgets = db.collection("budgets");
 
-// Clear old data
-await accountsCollection.deleteMany({});
-await transactionsCollection.deleteMany({});
-await budgetsCollection.deleteMany({});
+await accounts.deleteMany({});
+await transactions.deleteMany({});
+await budgets.deleteMany({});
 
-// Create account
-await accountsCollection.insertOne({
+await accounts.insertOne({
   accountId: "acc_001",
   userId: "user_001",
   accountType: "savings",
   balance: 45000
 });
 
-const categories = [
-  "food",
-  "travel",
-  "shopping",
-  "bills"
-];
+const categories = ["food", "travel", "shopping", "bills"];
 
 const merchants = {
   food: ["Swiggy", "Zomato", "McDonald's"],
@@ -36,22 +29,17 @@ const merchants = {
 const transactionData = [];
 
 for (let i = 1; i <= 200; i++) {
-
   const category =
     categories[Math.floor(Math.random() * categories.length)];
 
   const merchantList = merchants[category];
 
   const merchant =
-    merchantList[
-      Math.floor(Math.random() * merchantList.length)
-    ];
+    merchantList[Math.floor(Math.random() * merchantList.length)];
 
-  const amount =
-    Math.floor(Math.random() * 3000) + 100;
+  const amount = Math.floor(Math.random() * 3000) + 100;
 
-  const day =
-    Math.floor(Math.random() * 30) + 1;
+  const day = Math.floor(Math.random() * 30) + 1;
 
   transactionData.push({
     txnId: `txn_${i}`,
@@ -66,8 +54,8 @@ for (let i = 1; i <= 200; i++) {
   });
 }
 
-await transactionsCollection.insertMany(transactionData);
+await transactions.insertMany(transactionData);
 
-console.log("200 transactions added successfully!");
+console.log("Database seeded successfully!");
 
 process.exit();
